@@ -1,18 +1,10 @@
 /**
  * AI Liveness Check Component
- * Real biometric verification with webcam via API
+ * Real biometric verification via API
  */
 
-import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Webcam as WebcamIcon,
-  Loader2,
-  Check,
-  Eye,
-  RefreshCw,
-} from "lucide-react";
-import Webcam from "react-webcam";
+import React, { useState, useEffect } from "react";
+import { Camera as CameraIcon, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNFTRegistrationStore } from "@/store/nft-registration-store";
 
@@ -22,7 +14,7 @@ interface LivenessCheckProps {
   disabled: boolean;
 }
 
-type CheckStep = "idle" | "blink" | "turn" | "processing" | "complete";
+type CheckStep = "idle" | "processing" | "complete";
 
 export default function LivenessCheck({
   embedding,
@@ -31,48 +23,24 @@ export default function LivenessCheck({
 }: LivenessCheckProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [currentStep, setCurrentStep] = useState<CheckStep>("idle");
-  const [showWebcam, setShowWebcam] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const webcamRef = useRef<Webcam>(null);
-
-  const stepInstructions = {
-    blink: {
-      icon: Eye,
-      text: "Please blink your eyes",
-      color: "text-secondary",
-    },
-    turn: {
-      icon: RefreshCw,
-      text: "Turn your head slightly",
-      color: "text-secondary",
-    },
-    processing: { icon: Loader2, text: "Processing...", color: "text-primary" },
-  };
 
   const startLivenessCheck = async () => {
     try {
       setIsChecking(true);
-      setShowWebcam(true);
+
       setError(null);
 
-      // Step 1: Blink detection
-      setCurrentStep("blink");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Step 2: Head turn detection
-      setCurrentStep("turn");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Step 3: Process and generate embedding via API
-      setCurrentStep("processing");
-
       // Call the API
-      const response = await fetch(`${import.meta.env.VITE_BIOMETRIC_API_URL}/start-liveness`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_BIOMETRIC_API_URL}/start-liveness`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
@@ -117,7 +85,6 @@ export default function LivenessCheck({
       setCurrentStep("idle");
     } finally {
       setIsChecking(false);
-      setShowWebcam(false);
     }
   };
 
@@ -143,7 +110,7 @@ export default function LivenessCheck({
                 : "bg-emerald-50/80 border-emerald-200/50"
             }`}
           >
-            <WebcamIcon
+            <CameraIcon
               className={`w-6 h-6 ${
                 disabled ? "text-slate-400" : "text-emerald-600"
               }`}
@@ -173,72 +140,15 @@ export default function LivenessCheck({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Webcam Preview */}
-            <AnimatePresence>
-              {showWebcam && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden rounded-2xl"
-                >
-                  <div className="relative aspect-video bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/50">
-                    <Webcam
-                      ref={webcamRef}
-                      audio={false}
-                      screenshotFormat="image/jpeg"
-                      className="w-full h-full object-cover"
-                      videoConstraints={{
-                        facingMode: "user",
-                      }}
-                    />
-
-                    {/* Instruction Overlay */}
-                    {currentStep !== "idle" && currentStep !== "complete" && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-                      >
-                        <div className="text-center text-white">
-                          {stepInstructions[
-                            currentStep as keyof typeof stepInstructions
-                          ] && (
-                            <>
-                              {React.createElement(
-                                stepInstructions[
-                                  currentStep as keyof typeof stepInstructions
-                                ].icon,
-                                {
-                                  className: `w-12 h-12 mx-auto mb-2 ${
-                                    currentStep === "processing"
-                                      ? "animate-spin"
-                                      : ""
-                                  }`,
-                                }
-                              )}
-                              <p className="text-lg font-medium">
-                                {
-                                  stepInstructions[
-                                    currentStep as keyof typeof stepInstructions
-                                  ].text
-                                }
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!showWebcam && (
-              <p className="text-slate-600 leading-relaxed text-center">
-                We'll verify your identity using your device camera
-              </p>
-            )}
+            {/* Static Camera Card */}
+            <div className="relative aspect-video bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/50 flex items-center justify-center">
+              <div className="text-center">
+                <CameraIcon className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                <p className="text-slate-600 leading-relaxed">
+                  We'll verify your identity using your device camera
+                </p>
+              </div>
+            </div>
 
             <Button
               onClick={startLivenessCheck}
@@ -252,8 +162,8 @@ export default function LivenessCheck({
                 </>
               ) : (
                 <>
-                  <WebcamIcon className="w-5 h-5 mr-2" />
-                  Start Liveness Check
+                  <CameraIcon className="w-5 h-5 mr-2" />
+                  Capture
                 </>
               )}
             </Button>
