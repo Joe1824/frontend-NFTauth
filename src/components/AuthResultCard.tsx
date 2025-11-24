@@ -1,114 +1,73 @@
-import { Send, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { CheckCircle, XCircle, User, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNFTRegistrationStore } from "@/store/nft-registration-store";
-import { verifyAuth, AuthPayload, AuthResponse } from "@/utils/api";
-import { useState } from "react";
+import { AuthResponse } from "@/utils/api";
 
-interface SubmitAuthCardProps {
+interface AuthResultCardProps {
+  result: AuthResponse | null;
   isSubmitting: boolean;
-  onVerificationComplete: (result: AuthResponse) => void;
-  requireProfile: boolean;
-  setIsSubmitting: (isSubmitting: boolean) => void;
+  redirectUrl: string | null;
+  onReturnToApp: () => void;
 }
 
-export default function SubmitAuthCard({
+export default function AuthResultCard({
+  result,
   isSubmitting,
-  onVerificationComplete,
-  requireProfile,
-  setIsSubmitting,
-}: SubmitAuthCardProps) {
-  const { registrationData } = useNFTRegistrationStore();
-  const [error, setError] = useState<string | null>(null);
+  redirectUrl,
+  onReturnToApp,
+}: AuthResultCardProps) {
+  console.log("[AuthResultCard] render", { result, isSubmitting, redirectUrl });
 
-  const payload = {
-    walletAddress: registrationData.walletAddress,
-    message: registrationData.message,
-    signature: registrationData.signature,
-    embedding: registrationData.biometricData?.embeddings,
-    requireProfile: requireProfile,
-  };
-
-  console.log("[SubmitAuthCard] payload preview:", {
-    wallet: payload.walletAddress,
-    hasSignature: Boolean(payload.signature),
-    embeddingLen: Array.isArray(payload.embedding) ? payload.embedding.length : 0,
-    requireProfile,
-  });
-
-  const allStepsComplete =
-    Boolean(payload.walletAddress) &&
-    Boolean(payload.signature) &&
-    Boolean(payload.message) &&
-    Array.isArray(payload.embedding) &&
-    payload.embedding.length > 0;
-
-  const handleFinalSubmit = async () => {
-    setError(null);
-    if (!allStepsComplete) {
-      setError("Some steps are incomplete. Please complete all steps first.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await verifyAuth(payload as AuthPayload);
-      console.log("[SubmitAuthCard] verifyAuth response:", response);
-      onVerificationComplete(response);
-    } catch (err) {
-      console.error("[SubmitAuthCard] verification failed:", err);
-      setError("Verification failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="w-full">
-      <div className="card">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
-            <Send className="w-5 h-5 text-emerald-700" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold">Ready to Submit</h3>
-            <p className="small-muted">Step 4 of 4</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-100">
-            <p className="small-muted">All steps completed — submit to authenticate with backend</p>
-          </div>
-
-          <div className="card-ghost space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-neutral-700">Wallet</span>
-              <span className="text-emerald-600 font-medium">{registrationData.walletAddress ? "✓ Connected" : "Not connected"}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-neutral-700">Signature</span>
-              <span className="text-emerald-600 font-medium">{registrationData.signature ? "✓ Signed" : "Not signed"}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-neutral-700">Biometric</span>
-              <span className="text-emerald-600 font-medium">{registrationData.biometricData?.embeddings ? "✓ Generated" : "Not generated"}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-neutral-700">Profile</span>
-              <span className="text-neutral-800 font-medium">{requireProfile ? "Required" : "Not required"}</span>
-            </div>
-          </div>
-
-          {error && <div className="text-sm text-red-600 text-center">{error}</div>}
-
-          <Button onClick={handleFinalSubmit} disabled={isSubmitting || !allStepsComplete} className="btn-primary w-full">
-            {isSubmitting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>) : (<><Send className="w-4 h-4 mr-2" /> Submit Authentication</>)}
-          </Button>
+  if (isSubmitting) {
+    return (
+      <div className="w-full">
+        <div className="card text-center">
+          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-neutral-700" />
+          <h3 className="text-lg font-semibold">Verifying…</h3>
+          <p className="small-muted">Authenticating with backend</p>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  if (!result) return null;
+
+  const isSuccess = Boolean(result.authenticated);
+  const hasProfile = Boolean(result.profile && Object.keys(result.profile).length > 0);
+
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+      <div className={`card text-center ${isSuccess ? "" : ""}`}>
+        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${isSuccess ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
+          {isSuccess ? <CheckCircle className="w-8 h-8 text-emerald-600" /> : <XCircle className="w-8 h-8 text-red-600" />}
+        </div>
+
+        <h3 className={`text-xl font-semibold mb-2 ${isSuccess ? "text-emerald-700" : "text-red-700"}`}>
+          {isSuccess ? "Authentication Successful" : "Authentication Failed"}
+        </h3>
+
+        {isSuccess ? <p className="small-muted mb-4">Your identity has been verified.</p> : <p className="small-muted text-red-600 mb-4">Unable to verify identity.</p>}
+
+        {isSuccess && hasProfile && result.profile && (
+          <div className="card-ghost mb-4 text-left">
+            <div className="flex items-center gap-2 mb-2"><User className="w-4 h-4 text-neutral-700" /><div className="font-medium text-sm">Profile Shared</div></div>
+            <div className="space-y-2 text-sm">
+              {Object.entries(result.profile).map(([k, v]) => (
+                <div key={k} className="flex justify-between">
+                  <span className="text-neutral-600 capitalize">{k}</span>
+                  <span className="font-medium text-neutral-900">{String(v)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isSuccess && redirectUrl && (
+          <Button onClick={() => { console.log("[AuthResultCard] return to app"); onReturnToApp(); }} className="btn-primary w-full">
+            Return to App <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        )}
+      </div>
+    </motion.div>
   );
 }

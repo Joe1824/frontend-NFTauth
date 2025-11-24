@@ -83,7 +83,10 @@ export default function HomePage() {
     });
 
     if (redirectParam && !isRedirectAllowed(redirectParam)) {
-      console.warn("[HomePage] redirect blocked (not whitelisted):", redirectParam);
+      console.warn(
+        "[HomePage] redirect blocked (not whitelisted):",
+        redirectParam
+      );
     }
   }, []);
 
@@ -177,11 +180,13 @@ export default function HomePage() {
         title: "Message Signed",
         description: "Successfully signed",
       });
-    } catch (error: any) {
-      setSignError(error?.message ?? "Unknown error");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      setSignError(errorMessage);
       toast({
         title: "Sign Failed",
-        description: error?.message ?? "Unknown error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -209,6 +214,16 @@ export default function HomePage() {
   const handleVerificationComplete = (response: AuthResponse) => {
     setAuthResult(response);
 
+    // Update store with verification result
+    const { updateRegistrationData } = useNFTRegistrationStore.getState();
+    updateRegistrationData({
+      verificationResult: {
+        authenticate: response.authenticated,
+        profile: response.profile,
+        timestamp: Date.now(),
+      },
+    });
+
     if (response.authenticated) {
       toast({ title: "Success", description: "Identity verified" });
 
@@ -219,10 +234,9 @@ export default function HomePage() {
         if (walletAddress) url.searchParams.set("walletAddress", walletAddress);
 
         if (response.profile) {
-          const safeProfile: any = {};
+          const safeProfile: Record<string, unknown> = {};
           ["name", "gender", "dob", "mobile"].forEach((k) => {
-            if ((response.profile as any)[k])
-              safeProfile[k] = (response.profile as any)[k];
+            if (response.profile[k]) safeProfile[k] = response.profile[k];
           });
 
           url.searchParams.set(
