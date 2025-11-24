@@ -1,142 +1,36 @@
-/**
- * =====================================
- *         NFTAuth DESIGN SYSTEM
- * =====================================
- * 
- * Project: NFTAuth - Decentralized Identity Gateway
- * Type: Web3 Authentication dApp
- * 
- * DESIGN PHILOSOPHY
- * -----------------
- * Core Principle: Simple elegance meets Web3
- * Design Style: Minimal + Modern + Trustworthy
- * Emotion Goal: Clean, professional, and approachable
- * 
- * COLOR SYSTEM (HSL FORMAT)
- * -------------
- * Primary (Deep Indigo): 243 75% 59% - Trust and security
- * Accent (Bright Purple): 271 91% 65% - Interactive highlights
- * Success (Fresh Green): 142 76% 36% - Success states
- * Background: Soft gradient backdrop
- * 
- * TYPOGRAPHY
- * ----------
- * Display & Body: Inter for clean, modern readability
- * 
- * INTERACTIONS
- * ------------
- * Transitions: 200-300ms smooth
- * Subtle shadows: Soft elevation
- * Clean cards: Simple borders with hover states
- * States: Clear visual feedback
- * ====================================
- */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 240 10% 97%;
-    --foreground: 240 10% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 271 91% 65%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 271 91% 65%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 76% 36%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 243 75% 59%;
-    --radius: 0.75rem;
-  }
+  html { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+  body { @apply antialiased bg-white text-neutral-900; }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
+@layer components {
+  .card {
+    @apply bg-white border border-neutral-100 rounded-2xl shadow-[0_8px_24px_rgba(16,24,40,0.04)] p-6;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-  }
-}
-
-/* Simple gradient background */
-@layer utilities {
-  .bg-gradient-soft {
-    background: linear-gradient(135deg, 
-      hsl(var(--background)) 0%, 
-      hsl(243 20% 95%) 50%,
-      hsl(271 20% 95%) 100%);
+  .card-ghost {
+    @apply bg-neutral-50 border border-neutral-100 rounded-2xl p-5;
   }
 
-  /* Clean card style */
-  .card-clean {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    transition: all 0.2s ease;
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-neutral-900 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-transform duration-150;
   }
 
-  .card-clean:hover {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    border-color: hsl(var(--primary) / 0.3);
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-white border border-neutral-200 text-neutral-800 rounded-xl shadow-sm hover:shadow-md transition-transform duration-150;
   }
 
-  /* Subtle animations */
-  .fade-in {
-    animation: fadeIn 0.4s ease-in;
+  .small-muted {
+    @apply text-sm text-neutral-500;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  .mono {
+    @apply font-mono;
   }
-
-  .slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--background));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.3);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
 }

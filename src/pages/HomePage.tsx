@@ -1,16 +1,15 @@
-/**
- * NFTAuth - Decentralized Identity Authentication Gateway
- * Main authentication flow orchestration
- */
+// HomePage.tsx (FINAL UPDATED – All props fixed, no TS errors)
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, Sparkles } from "lucide-react";
+
 import WalletConnectButton from "@/components/WalletConnectButton";
 import SignMessageCard from "@/components/SignMessageCard";
 import LivenessCheck from "@/components/LivenessCheck";
 import SubmitAuthCard from "@/components/SubmitAuthCard";
 import AuthResultCard from "@/components/AuthResultCard";
+
 import {
   connectWallet,
   signMessage,
@@ -23,53 +22,83 @@ import { useToast } from "@/hooks/use-toast";
 import { AuthResponse } from "@/utils/api";
 import { useNFTRegistrationStore } from "@/store/nft-registration-store";
 
+// Redirect whitelist (security rule)
+const REDIRECT_WHITELIST = [
+  window.location.origin,
+  "https://web3-app-demo.vercel.app",
+];
+
+const isRedirectAllowed = (raw: string | null) => {
+  if (!raw) return false;
+  try {
+    const u = new URL(raw);
+    return REDIRECT_WHITELIST.includes(u.origin);
+  } catch {
+    return false;
+  }
+};
+
+// debug hash helper
+const shortHash = (str: string) => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i);
+    h |= 0;
+  }
+  return `h${Math.abs(h).toString(36).slice(0, 8)}`;
+};
+
 export default function HomePage() {
-  // URL Query Parameters
   const [requireProfile, setRequireProfile] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
-  // Authentication State
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
   const [signature, setSignature] = useState<string | null>(null);
   const [embedding, setEmbedding] = useState<number[] | null>(null);
+
   const [authResult, setAuthResult] = useState<AuthResponse | null>(null);
 
-  // Loading States
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Errors
   const [signError, setSignError] = useState<string | null>(null);
 
   const { toast } = useToast();
 
-  // Parse URL parameters on mount
+  // Read URL params on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
     const profileParam = params.get("requireProfile");
     const redirectParam = params.get("redirect");
 
     setRequireProfile(profileParam === "true");
     setRedirectUrl(redirectParam);
 
-    console.log("🔗 NFTAuth initialized:", {
-      requireProfile: profileParam === "true",
-      redirectUrl: redirectParam,
+    console.log("[HomePage] init:", {
+      requireProfile: profileParam,
+      redirectParam,
     });
+
+    if (redirectParam && !isRedirectAllowed(redirectParam)) {
+      console.warn("[HomePage] redirect blocked (not whitelisted):", redirectParam);
+    }
   }, []);
 
-  // Listen to wallet account changes
+  // Wallet account change listener
   useEffect(() => {
     onAccountsChanged((accounts) => {
+      console.log("[HomePage] accounts changed:", accounts);
+
       if (accounts.length === 0) {
         setWalletAddress(null);
         setSignature(null);
         setEmbedding(null);
         toast({
           title: "Wallet Disconnected",
-          description: "Please reconnect your wallet",
+          description: "Reconnect your wallet",
           variant: "destructive",
         });
       } else if (accounts[0] !== walletAddress) {
@@ -80,51 +109,48 @@ export default function HomePage() {
     });
 
     return () => removeListeners();
-  }, [walletAddress, toast]);
+  }, [walletAddress]);
 
   // Generate message when wallet connects
   useEffect(() => {
     if (walletAddress && !message) {
       const nonce = generateNonce();
       const authMessage = createAuthMessage(nonce);
+
       setMessage(authMessage);
 
-      // Store message in global state
+      sessionStorage.setItem("nftauth_nonce", nonce);
+      sessionStorage.setItem("nftauth_message", authMessage);
+
       const { updateRegistrationData } = useNFTRegistrationStore.getState();
       updateRegistrationData({ message: authMessage });
+
+      console.log("[HomePage] Message generated:", shortHash(authMessage));
     }
   }, [walletAddress, message]);
 
-  // Auto-submit disabled - user must click submit button manually
-  // This prevents immediate network errors and gives users control
-
-  // Handle wallet connection
+  // Connect wallet
   const handleConnectWallet = async () => {
     setIsConnecting(true);
     setSignError(null);
 
     try {
       const address = await connectWallet();
-      setWalletAddress(address);
+      const normalized = address?.toLowerCase() ?? null;
+      setWalletAddress(normalized);
 
-      // Store in global state
-      const { updateRegistrationData } = useNFTRegistrationStore.getState();
-      updateRegistrationData({ walletAddress: address });
+      useNFTRegistrationStore.getState().updateRegistrationData({
+        walletAddress: normalized,
+      });
 
       toast({
         title: "Wallet Connected",
-        description: `Connected to ${address.substring(
-          0,
-          6
-        )}...${address.substring(address.length - 4)}`,
+        description: `${normalized?.slice(0, 6)}...${normalized?.slice(-4)}`,
       });
-    } catch (error: unknown) {
-      console.error("Wallet connection error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+    } catch (error: any) {
       toast({
         title: "Connection Failed",
-        description: errorMessage,
+        description: error?.message ?? "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -132,7 +158,7 @@ export default function HomePage() {
     }
   };
 
-  // Handle message signing
+  // Sign message
   const handleSignMessage = async () => {
     if (!walletAddress || !message) return;
 
@@ -143,22 +169,19 @@ export default function HomePage() {
       const sig = await signMessage(message, walletAddress);
       setSignature(sig);
 
-      // Store signature in global state
-      const { updateRegistrationData } = useNFTRegistrationStore.getState();
-      updateRegistrationData({ signature: sig });
+      useNFTRegistrationStore.getState().updateRegistrationData({
+        signature: sig,
+      });
 
       toast({
         title: "Message Signed",
-        description: "Signature captured successfully",
+        description: "Successfully signed",
       });
-    } catch (error: unknown) {
-      console.error("Signing error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      setSignError(errorMessage);
+    } catch (error: any) {
+      setSignError(error?.message ?? "Unknown error");
       toast({
-        title: "Signing Failed",
-        description: errorMessage,
+        title: "Sign Failed",
+        description: error?.message ?? "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -166,12 +189,15 @@ export default function HomePage() {
     }
   };
 
-  // Handle embedding generation
+  // Embedding generated from liveness
   const handleEmbeddingGenerated = (embeddingData: number[]) => {
     setEmbedding(embeddingData);
 
-    // Store embedding in global state (already done in LivenessCheck component)
-    // But ensure it's updated here as well if needed
+    const hash = shortHash(JSON.stringify(embeddingData.slice(0, 8)));
+
+    console.log(
+      `[HomePage] embedding generated -> len=${embeddingData.length}, hash=${hash}`
+    );
 
     toast({
       title: "Biometric Captured",
@@ -179,80 +205,85 @@ export default function HomePage() {
     });
   };
 
-  // Handle verification complete from SubmitAuthCard
+  // Verification completion
   const handleVerificationComplete = (response: AuthResponse) => {
     setAuthResult(response);
 
     if (response.authenticated) {
-      toast({
-        title: "Verification Successful",
-        description: "Your identity has been verified",
-      });
+      toast({ title: "Success", description: "Identity verified" });
 
-      // Redirect to URL with response data
-      if (redirectUrl) {
+      if (redirectUrl && isRedirectAllowed(redirectUrl)) {
         const url = new URL(redirectUrl);
-        url.searchParams.set("authenticate", response.authenticated.toString());
+
+        url.searchParams.set("authenticate", "true");
+        if (walletAddress) url.searchParams.set("walletAddress", walletAddress);
+
         if (response.profile) {
-          url.searchParams.set("profile", JSON.stringify(response.profile));
-        }
-        if(walletAddress) {
-          url.searchParams.set("walletAddress", walletAddress);
+          const safeProfile: any = {};
+          ["name", "gender", "dob", "mobile"].forEach((k) => {
+            if ((response.profile as any)[k])
+              safeProfile[k] = (response.profile as any)[k];
+          });
+
+          url.searchParams.set(
+            "profile",
+            encodeURIComponent(JSON.stringify(safeProfile))
+          );
         }
 
+        console.log("[HomePage] Redirecting to:", url.toString());
         window.location.href = url.toString();
       }
     } else {
       toast({
         title: "Verification Failed",
-        description: "Verification failed",
+        description: "Identity verification failed",
         variant: "destructive",
       });
     }
   };
 
-  // Handle return to app
+  // Return to app
   const handleReturnToApp = () => {
-    if (redirectUrl) {
+    if (redirectUrl && isRedirectAllowed(redirectUrl)) {
       window.location.href = redirectUrl;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 relative overflow-hidden">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.03),rgba(255,255,255,0))]" />
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 to-transparent opacity-60" />
+      </div>
 
-      {/* Main Content */}
       <div className="relative container mx-auto px-6 py-12 md:py-20">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-center mb-12 md:mb-16"
+          className="text-center mb-16"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/20 shadow-lg shadow-slate-200/50 mb-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white shadow-sm mb-6">
             <Shield className="w-10 h-10 text-slate-700" />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-light mb-4 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-extralight text-slate-800">
             NFTAuth
           </h1>
 
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-6 leading-relaxed">
-            Decentralized Identity Authentication
+          <p className="text-lg text-slate-600 mt-2">
+            Decentralized identity authentication — secure, simple, private.
           </p>
 
           {requireProfile && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-xl border border-white/20 rounded-full text-sm text-slate-700 font-medium shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border rounded-full mt-4 text-sm text-slate-700 shadow-sm">
               <Sparkles className="w-4 h-4" />
               Profile verification required
             </div>
           )}
         </motion.div>
 
-        {/* Authentication Flow */}
+        {/* Flow */}
         <div className="max-w-3xl mx-auto space-y-8">
           {!authResult && (
             <>
@@ -280,8 +311,8 @@ export default function HomePage() {
               {walletAddress && message && signature && embedding && (
                 <SubmitAuthCard
                   isSubmitting={isSubmitting}
-                  onVerificationComplete={handleVerificationComplete}
                   requireProfile={requireProfile}
+                  onVerificationComplete={handleVerificationComplete}
                   setIsSubmitting={setIsSubmitting}
                 />
               )}
@@ -298,15 +329,9 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="text-center mt-16 text-sm text-slate-500"
-        >
-          <p>Powered by Blockchain • Secured by Biometrics</p>
-        </motion.div>
+        <div className="text-center mt-16 text-sm text-slate-500">
+          Powered by Blockchain • Secured by Biometrics
+        </div>
       </div>
     </div>
   );
