@@ -49,7 +49,7 @@ export default function LivenessCheck({
       const data = await response.json();
 
       if (data.success) {
-        if (/live.*verified/i.test(data.result.verdict)) {
+        if (/live/i.test(data.result.verdict)) {
           // Successful liveness
           const realEmbedding = data.result.meta.embedding;
           onEmbeddingGenerated(realEmbedding);
