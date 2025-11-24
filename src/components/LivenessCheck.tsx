@@ -67,7 +67,7 @@ export default function LivenessCheck({
       setCurrentStep("processing");
 
       // Call the API
-      const response = await fetch(`${process.env.VITE_BIOMETRIC_API_URL}/start-liveness`, {
+      const response = await fetch(`${import.meta.env.VITE_BIOMETRIC_API_URL}/start-liveness`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
