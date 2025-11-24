@@ -7,7 +7,7 @@ import axios, { AxiosInstance, AxiosError } from "axios";
 
 // Create axios instance with base configuration
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:5000",
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   timeout: 30000, // 30 seconds
   headers: {
     "Content-Type": "application/json",
@@ -59,7 +59,7 @@ export const authenticateUser = async (
 ): Promise<AuthResponse> => {
   try {
     const response = await api.post<AuthResponse>(
-      "http://localhost:5000/api/verify",
+      `${import.meta.env.VITE_BACKEND_URL}/api/verify`,
       payload
     );
     return response.data;

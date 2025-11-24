@@ -109,9 +109,7 @@ export default function AuthResultCard({
                     </p>
                     <p className="text-slate-600 text-xs leading-relaxed">
                       The authentication backend server is not available at{" "}
-                      <code className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-xs">
-                        http://localhost:5000
-                      </code>
+                      
                       <br />
                       Please start the backend server to complete
                       authentication.
