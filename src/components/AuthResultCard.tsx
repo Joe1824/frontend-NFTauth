@@ -98,25 +98,6 @@ export default function AuthResultCard({
           ) : (
             <div className="space-y-3 mb-6">
               <p className="text-red-700">Authentication failed</p>
-
-              {/* Backend setup hint */}
-              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/50 text-left">
-                <div className="flex items-start gap-3">
-                  <Server className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-slate-800 mb-1">
-                      Backend Not Running
-                    </p>
-                    <p className="text-slate-600 text-xs leading-relaxed">
-                      The authentication backend server is not available at{" "}
-                      
-                      <br />
-                      Please start the backend server to complete
-                      authentication.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </motion.div>
