@@ -10,7 +10,6 @@ import {
   User,
   ArrowRight,
   Loader2,
-  Server,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthResponse } from "@/utils/api";

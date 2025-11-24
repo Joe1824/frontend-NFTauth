@@ -33,6 +33,7 @@ export default function SubmitAuthCard({
     embedding: registrationData.biometricData?.embeddings,
     requireProfile: requireProfile,
   };
+  console.log(payload);
 
   const allStepsComplete =
     payload.walletAddress &&
