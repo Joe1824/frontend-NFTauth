@@ -40,7 +40,7 @@ export default function LivenessCheck({ embedding, onEmbeddingGenerated, disable
       const verdict: string = data.result?.verdict || "";
       const meta = data.result?.meta;
 
-      if (!meta) throw new Error("Something went wrong! Please Try again later.");
+      if (!meta) throw new Error("Spoof detected! Please Try again later.");
 
       if (/live/i.test(verdict)) {
         const realEmbedding = Array.isArray(meta.embedding) ? meta.embedding : [];
@@ -64,7 +64,7 @@ export default function LivenessCheck({ embedding, onEmbeddingGenerated, disable
         setError("Spoof detected. Please try again with a real face.");
         setCurrentStep("idle");
       } else {
-        throw new Error("Something went wrong! Try again later.");
+        throw new Error("Spoof detected! Try again later.");
       }
     } catch (err) {
       console.error("[Liveness] Error:", err);
