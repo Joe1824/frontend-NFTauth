@@ -64,7 +64,7 @@ export default function LivenessCheck({ embedding, onEmbeddingGenerated, disable
         setError("Spoof detected. Please try again with a real face.");
         setCurrentStep("idle");
       } else {
-        throw new Error("Unexpected verdict from API");
+        throw new Error("Something went wrong! Try again later.");
       }
     } catch (err) {
       console.error("[Liveness] Error:", err);
