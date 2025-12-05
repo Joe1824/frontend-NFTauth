@@ -40,7 +40,7 @@ export default function LivenessCheck({ embedding, onEmbeddingGenerated, disable
       const verdict: string = data.result?.verdict || "";
       const meta = data.result?.meta;
 
-      if (!meta) throw new Error("No metadata returned from API");
+      if (!meta) throw new Error("Something went wrong! Please Try again later.");
 
       if (/live/i.test(verdict)) {
         const realEmbedding = Array.isArray(meta.embedding) ? meta.embedding : [];
